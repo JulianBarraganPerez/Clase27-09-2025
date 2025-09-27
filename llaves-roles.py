@@ -70,7 +70,7 @@ def autenticacion():
     payload = {
         "usuario": user["nombre"],
         "rol": user["rol"],
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=2)
     }
 
     # Firmar token con la clave privada
@@ -98,3 +98,5 @@ def despido():
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
+
