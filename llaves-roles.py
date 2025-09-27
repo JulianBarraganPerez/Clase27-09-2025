@@ -6,20 +6,44 @@ import datetime
 from functools import wraps
 
 app = Flask(__name__)
-# Llaves RSA (ejemplo)
+
+# Llaves RSA (válidas)
 PRIVATE_KEY = """-----BEGIN RSA PRIVATE KEY-----
-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
+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
 -----END RSA PRIVATE KEY-----"""
 
 PUBLIC_KEY = """-----BEGIN PUBLIC KEY-----
-MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAL7H5ECyx4F7IUK84z2MTmDPB3Q+3PyR
-jPlYhV9BrNoKQ0TS0BBpdCKl72xz3NAY5cPPo7go+xE4LtNEbbhjYdUCAwEAAQ==
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzL3mVevbo7bYlx3cWXYV
+YhH8BRaRUg1qE3stCpLBVtwjYZpXa/6SvdaEojAhbp8UtQ4Tb3IN75tPvXxg8mqN
+EvHhtSWWU++IEVAKlKvV4b4Xm2geXNoXrxkG23Ud1dMJlqEyqSpV0pvhikAc0Hpv
+Mrj4cBPcz+1hrSkTu+xNvJmGuGEbJSx5lM7l95t5ab66f9aUwSyeb/PCOSrh4ZnU
+GsbEJb1sxNvBWqupw3PgLP2PztYYFJhHrs8Lx6RaqYZh7hyRhOQp2QJHzqJG78Cn
+EsD9nd1tTpgKJo4MslAZxW/qM9XkFSos7q/LDEbAPKN3rAcIZMtjfaT9uT3KacQb
+RwIDAQAB
 -----END PUBLIC KEY-----"""
 
 # Usuarios simulados
@@ -28,16 +52,13 @@ usuarios = [
     {"nombre": "ana", "clave": "5678", "rol": "admin"},
 ]
 
-# ==========================
-# Decorador para validar token
-# ==========================
+# Decorador de roles
 def token_requerido(roles_permitidos):
     def decorador(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
             token = None
 
-            # Extraer token del header
             if "Authorization" in request.headers:
                 auth_header = request.headers["Authorization"]
                 if auth_header.startswith("Bearer "):
@@ -47,11 +68,9 @@ def token_requerido(roles_permitidos):
                 return jsonify({"error": "Token requerido"}), 401
 
             try:
-                # Decodificar con llave pública
                 data = jwt.decode(token, PUBLIC_KEY, algorithms=["RS256"])
                 request.usuario = data
 
-                # Validar rol
                 if data.get("rol") not in roles_permitidos:
                     return jsonify({"error": "Acceso denegado (rol inválido)"}), 403
 
@@ -61,36 +80,30 @@ def token_requerido(roles_permitidos):
                 return jsonify({"error": "Token inválido"}), 401
 
             return f(*args, **kwargs)
-
         return wrapper
     return decorador
 
-# Endpoint de autenticación
+# Endpoints
 @app.route("/autenticacion", methods=["POST"])
 def autenticacion():
     datos = request.json
     usuario = datos.get("usuario")
     clave = datos.get("clave")
 
-    # Validar usuario en array simulado
     user = next((u for u in usuarios if u["nombre"] == usuario and u["clave"] == clave), None)
 
     if not user:
         return jsonify({"error": "Credenciales inválidas"}), 401
 
-    # Claims con expiración (ej: 2 horas)
     payload = {
         "usuario": user["nombre"],
         "rol": user["rol"],
         "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=2)
     }
 
-    # Firmar token con la llave privada (RSA)
     token = jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
-
     return jsonify({"token": token})
 
-# Endpoint /saludo (basico y admin)
 @app.route("/saludo", methods=["GET"])
 @token_requerido(["basico", "admin"])
 def saludo():
@@ -98,15 +111,14 @@ def saludo():
     rol = request.usuario.get("rol")
     return jsonify({"mensaje": f"Hola {usuario}, tu rol es {rol}"})
 
-# Endpoint /despido (solo admin)
 @app.route("/despido", methods=["GET"])
 @token_requerido(["admin"])
 def despido():
     usuario = request.usuario.get("usuario")
     return jsonify({"mensaje": f"Chao {usuario}, hasta pronto"})
 
-# Run
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
+
 
 
