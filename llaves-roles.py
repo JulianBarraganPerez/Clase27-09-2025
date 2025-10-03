@@ -6,45 +6,15 @@ import datetime
 from functools import wraps
 
 app = Flask(__name__)
+# Llaves RSA (ejemplo)
 
-# Llaves RSA (válidas)
-PRIVATE_KEY = """-----BEGIN RSA PRIVATE KEY-----
-MIIEowIBAAKCAQEAzL3mVevbo7bYlx3cWXYVYhH8BRaRUg1qE3stCpLBVtwjYZpX
-a/6SvdaEojAhbp8UtQ4Tb3IN75tPvXxg8mqNEvHhtSWWU++IEVAKlKvV4b4Xm2ge
-XNoXrxkG23Ud1dMJlqEyqSpV0pvhikAc0HpvMrj4cBPcz+1hrSkTu+xNvJmGuGEb
-JSx5lM7l95t5ab66f9aUwSyeb/PCOSrh4ZnUGsbEJb1sxNvBWqupw3PgLP2PztYY
-FJhHrs8Lx6RaqYZh7hyRhOQp2QJHzqJG78CnEsD9nd1tTpgKJo4MslAZxW/qM9Xk
-FSos7q/LDEbAPKN3rAcIZMtjfaT9uT3KacQbRwIDAQABAoIBABhxvF0MyzCIGx4N
-D/qQ3lUDFsdnK4r69HyHiB7FkAYKxNVXMMjWb9cHf8C3HwK0+8tMpsyr1kTQ4oiT
-LVdD7LGkzAId8CeFstWwnU8bONMD9kjQ4+ROjP0yH1CMUoX/qQou7Aa6cK/21jcl
-kMvNf0nL3Um5oHZloDK1GR45ZjYZTZddXwoOd4XgYqkC0OfY24Rud4pFQjZ4XxjS
-dBMiDLFciReh2tHvhZftI4WjIV6y9uD7tAzqPL7H8SmUMDpuUtMUMJcSZ+adVa59
-OHbA9TtALkCkbHYALl8Fnh1fhPaSNeRJ6mgU1m/dKfMKDRoyAVPBIplEk7cT6K1k
-+kgcCgECgYEA9U5CP2FOSc/JRJSKvWswFfViLRqQkq1kZZmsW1x8Qq/1vYfZgOtS
-m13hW5sOW4oH2ioAo2roQjvO2oZJh8fFv8y4l2lw1hROTxckym/yfNZpS0I31wXU
-pcektODDG17ZiyWBVZhrqLKrFf3Zk9Q90nD7hCnnMbdzE9A1M6lSxK0CgYEA1+YZ
-p2rcLqBoP9iJOCaNvVkbChEuDZYFpcavll10iVhrRY9kwbB/HRTWQFdtdwozn/cf
-OjNU88x/RGu6VDWj0JqzKqV+zpuP4i7YcQzFnDdyv+CHCvDQoH3tew0cF29Q4fVs
-aFj82r6sY5UikFjSMCCe8U4k9h/kcMEkVwYlEvMCgYAqXlCaeI6Jg0eFtHeYimPo
-qIT94X9mpLPG1kMF30t4x7lmS85Pab0+30BzO0XW+nKN2rN/jaxkkN7+v3H7Zc5y
-P/0uXuw4OlIf6nQtV0arjFnfVqQ1XcGlUhsPDlI1ojIbCgsyXNfrbhlffLUKDN9u
-1S7wI6O8zUsZ6loYbqLuwQKBgFeQWx99T2aYcf/Pr0pCd2jIUIoXCdIM1ZpHmsrZ
-2JZ+L8EGHtIfLoODdlBMm+9Lf3kiclu06lX/YO2j14V9+ab+Ka1HxGFsFqk9LVQo
-MtwbUb3Q4MfM2Lz1bMkQ0B8FV/kWxFoA1o+6HLQsm3cOx7rjStcgVv3vTi+GbmZa
-b09hAoGBAJx5OybNTN8PgV7PYPsP+EZSPYjAW4HqDUYe7h6ZRP1JEMXEvibAIFCN
-jRcpDeoP+d+AlHvsRLVOuV3a+7xqniPkeMbdUwHrbfSbb3fAqQz5DMMOswfxiHgU
-0zq59YMLZn1Wjvli9Q4Y+TrpLxq9O5pKInl1TxN0InbD7i3YlNfN
------END RSA PRIVATE KEY-----"""
+with open("private.pem", "r") as f:
+    PRIVATE_KEY = f.read()
 
-PUBLIC_KEY = """-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzL3mVevbo7bYlx3cWXYV
-YhH8BRaRUg1qE3stCpLBVtwjYZpXa/6SvdaEojAhbp8UtQ4Tb3IN75tPvXxg8mqN
-EvHhtSWWU++IEVAKlKvV4b4Xm2geXNoXrxkG23Ud1dMJlqEyqSpV0pvhikAc0Hpv
-Mrj4cBPcz+1hrSkTu+xNvJmGuGEbJSx5lM7l95t5ab66f9aUwSyeb/PCOSrh4ZnU
-GsbEJb1sxNvBWqupw3PgLP2PztYYFJhHrs8Lx6RaqYZh7hyRhOQp2QJHzqJG78Cn
-EsD9nd1tTpgKJo4MslAZxW/qM9XkFSos7q/LDEbAPKN3rAcIZMtjfaT9uT3KacQb
-RwIDAQAB
------END PUBLIC KEY-----"""
+with open("public.pem", "r") as f:
+    PUBLIC_KEY = f.read()
+
+
 
 # Usuarios simulados
 usuarios = [
