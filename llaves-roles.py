@@ -7,20 +7,14 @@ from functools import wraps
 
 app = Flask(__name__)
 # Llaves RSA (ejemplo)
-PRIVATE_KEY = """-----BEGIN RSA PRIVATE KEY-----
-MIIBOwIBAAJBAL7H5ECyx4F7IUK84z2MTmDPB3Q+3PyRjPlYhV9BrNoKQ0TS0BBp
-dCKl72xz3NAY5cPPo7go+xE4LtNEbbhjYdUCAwEAAQJALjKXMK21toUim1ZqvUOw
-Aepuwk7v0SBxlD7Kc1lTSvUxi32a92nBbMVhYVD4RZVZEnE7Vj4i9Wq9Q35s6DYz
-+QIhAPQjEK2AOrDG5dMJHTi+03Wg8Yv2G6DKSg9XsZGoo0flAiEAwwf5FXjOWHsp
-1Bj1fXgh1oOlZ8raYw1cUlUTlU2rT0MCIQDLN26TzMe8blzUlWzqZgVqkZaQSEpH
-CSjDlLZ3T/Rp4QIhAL8NMyNQ7KZ4fY9VEzM56gr1N54Q3nAJfdAvF3qPBzT9AiEA
-pm9WBru+ewStcvQEmUReGLG4VCF3OHtxrgH3FoGhOow=
------END RSA PRIVATE KEY-----"""
 
-PUBLIC_KEY = """-----BEGIN PUBLIC KEY-----
-MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAL7H5ECyx4F7IUK84z2MTmDPB3Q+3PyR
-jPlYhV9BrNoKQ0TS0BBpdCKl72xz3NAY5cPPo7go+xE4LtNEbbhjYdUCAwEAAQ==
------END PUBLIC KEY-----"""
+with open("private.pem", "r") as f:
+    PRIVATE_KEY = f.read()
+
+with open("public.pem", "r") as f:
+    PUBLIC_KEY = f.read()
+
+
 
 # Usuarios simulados
 usuarios = [
