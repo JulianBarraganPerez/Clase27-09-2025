@@ -1,5 +1,4 @@
 # instalar dependencias: pip install flask pyjwt cryptography
-
 from flask import Flask, request, jsonify
 import jwt
 import datetime
@@ -8,13 +7,18 @@ from functools import wraps
 
 app = Flask(__name__)
 
+# ------------------------------
+# Cargar llaves RSA
+# ------------------------------
 with open("private.pem", "r") as f:
     PRIVATE_KEY = f.read()
 
 with open("public.pem", "r") as f:
     PUBLIC_KEY = f.read()
 
-# --- Simulación de usuarios y clientes ---
+# ------------------------------
+# Simulación de usuarios y clientes
+# ------------------------------
 usuarios = [
     {"nombre": "juan", "clave": "1234", "rol": "basico"},
     {"nombre": "ana", "clave": "5678", "rol": "admin"},
@@ -24,10 +28,34 @@ clientes = [
     {"client_id": "micro1", "client_secret": "abcd1234"}
 ]
 
-# Guardar refresh tokens
+# ------------------------------
+# Scopes definidos formalmente
+# ------------------------------
+SCOPES = {
+    "service.read": "Permite leer información entre servicios (Client Credentials)",
+    "service.write": "Permite escribir información entre servicios (Client Credentials)",
+    "user.read": "Permite leer información de usuario final (Password Grant)",
+    "user.write": "Permite modificar información de usuario final (Password Grant)"
+}
+
+# ------------------------------
+# Almacenamiento de Refresh Tokens
+# ------------------------------
 refresh_tokens = {}
 
-# --- Decorador de validación ---
+# ------------------------------
+# Middleware para exigir HTTPS
+# ------------------------------
+@app.before_request
+def verificar_https():
+    if not request.is_secure:
+        return jsonify({
+            "error": "Conexión no segura. Los tokens solo se transmiten por HTTPS."
+        }), 403
+
+# ------------------------------
+# Decorador para validar Access Tokens
+# ------------------------------
 def token_requerido(scopes_permitidos):
     def decorador(f):
         @wraps(f)
@@ -45,7 +73,7 @@ def token_requerido(scopes_permitidos):
                 data = jwt.decode(token, PUBLIC_KEY, algorithms=["RS256"])
                 request.usuario = data
 
-                # Validar scopes
+                # Validar que al menos un scope permitido esté en el token
                 token_scopes = data.get("scope", "").split()
                 if not any(s in token_scopes for s in scopes_permitidos):
                     return jsonify({"error": "Acceso denegado (scope inválido)"}), 403
@@ -59,9 +87,9 @@ def token_requerido(scopes_permitidos):
         return wrapper
     return decorador
 
-# --- Endpoints OAuth2 ---
-
-# 1. Client Credentials Grant
+# ------------------------------
+# Endpoint: Client Credentials Grant
+# ------------------------------
 @app.route("/token/client", methods=["POST"])
 def client_credentials():
     datos = request.json
@@ -77,10 +105,19 @@ def client_credentials():
         "scope": "service.read service.write",
         "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
     }
-    access_token = jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
-    return jsonify({"access_token": access_token, "token_type": "Bearer", "expires_in": 1800})
 
-# 2. Password Grant con Refresh Token
+    access_token = jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
+
+    return jsonify({
+        "access_token": access_token,
+        "token_type": "Bearer",
+        "expires_in": 1800,
+        "scope": "service.read service.write"
+    })
+
+# ------------------------------
+# Endpoint: Password Grant (usuario final) + Refresh Token
+# ------------------------------
 @app.route("/token/user", methods=["POST"])
 def user_login():
     datos = request.json
@@ -97,8 +134,8 @@ def user_login():
         "scope": "user.read user.write",
         "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
     }
-    access_token = jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
 
+    access_token = jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
     refresh_token = str(uuid.uuid4())
     refresh_tokens[refresh_token] = usuario
 
@@ -106,10 +143,13 @@ def user_login():
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "Bearer",
-        "expires_in": 900
+        "expires_in": 900,
+        "scope": "user.read user.write"
     })
 
-# 3. Refresh Token
+# ------------------------------
+# Endpoint: Refresh Token
+# ------------------------------
 @app.route("/token/refresh", methods=["POST"])
 def refresh():
     datos = request.json
@@ -127,19 +167,33 @@ def refresh():
         "scope": "user.read user.write",
         "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
     }
-    access_token = jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
-    return jsonify({"access_token": access_token, "token_type": "Bearer", "expires_in": 900})
 
-# --- Endpoints protegidos ---
+    access_token = jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
+
+    return jsonify({
+        "access_token": access_token,
+        "token_type": "Bearer",
+        "expires_in": 900
+    })
+
+# ------------------------------
+# Endpoints protegidos
+# ------------------------------
 @app.route("/saludo", methods=["GET"])
 @token_requerido(["user.read", "service.read"])
 def saludo():
-    return jsonify({"mensaje": f"Hola {request.usuario.get('usuario', 'microservicio')}"})
+    return jsonify({"mensaje": f"Hola {request.usuario.get('usuario', 'microservicio')}!"})
 
 @app.route("/despido", methods=["GET"])
 @token_requerido(["user.write", "service.write"])
 def despido():
-    return jsonify({"mensaje": "Chao, hasta pronto"})
+    return jsonify({"mensaje": "Chao, hasta pronto."})
 
+# ------------------------------
+# Ejecución
+# ------------------------------
 if __name__ == "__main__":
+    # Genera tus certificados locales para HTTPS:
+    # openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes
+
     app.run(debug=True, port=5000)
