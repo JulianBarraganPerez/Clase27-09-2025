@@ -4,6 +4,7 @@ import jwt
 import datetime
 import uuid
 from functools import wraps
+import secrets
 
 app = Flask(__name__)
 
@@ -42,7 +43,10 @@ SCOPES = {
 # Almacenamiento de Refresh Tokens
 # ------------------------------
 refresh_tokens = {}
+active_user_tokens = {}
+active_client_tokens = {}
 
+test_data = {}
 # ------------------------------
 # Middleware para exigir HTTPS
 # ------------------------------
@@ -73,6 +77,16 @@ def token_requerido(scopes_permitidos):
                 data = jwt.decode(token, PUBLIC_KEY, algorithms=["RS256"])
                 request.usuario = data
 
+                if "usuario" in data:  # token emitido para un usuario
+                    usuario = data["usuario"]
+                    if active_user_tokens.get(usuario) != token:
+                        return jsonify({"error": "Token reemplazado o inválido"}), 401
+
+                elif "client_id" in data:  # token emitido para un cliente
+                    cid = data["client_id"]
+                    if active_client_tokens.get(cid) != token:
+                        return jsonify({"error": "Token reemplazado o inválido"}), 401
+
                 # Validar que al menos un scope permitido esté en el token
                 token_scopes = data.get("scope", "").split()
                 if not any(s in token_scopes for s in scopes_permitidos):
@@ -83,9 +97,23 @@ def token_requerido(scopes_permitidos):
             except jwt.InvalidTokenError:
                 return jsonify({"error": "Token inválido"}), 401
 
+
             return f(*args, **kwargs)
         return wrapper
     return decorador
+
+@app.route("/prueba", methods=["GET"])
+def prueba_rtokens():
+    return refresh_tokens
+
+@app.route("/prueba/tokensC", methods=["GET"])
+def prueba_rtokens_c():
+    return active_user_tokens
+
+@app.route("/data", methods=["GET"])
+def prueba_data():
+    return test_data
+
 
 # ------------------------------
 # Endpoint: Client Credentials Grant
@@ -107,12 +135,17 @@ def client_credentials():
     }
 
     access_token = jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
+    active_client_tokens[cid] = access_token
+
+    refresh_token = secrets.token_urlsafe(64)
+    refresh_tokens[cid] = refresh_token
 
     return jsonify({
         "access_token": access_token,
         "token_type": "Bearer",
         "expires_in": 1800,
-        "scope": "service.read service.write"
+        "scope": "service.read service.write",
+        "refresh_token":refresh_token
     })
 
 # ------------------------------
@@ -138,6 +171,7 @@ def user_login():
     access_token = jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
     refresh_token = str(uuid.uuid4())
     refresh_tokens[refresh_token] = usuario
+    active_user_tokens[usuario] = access_token
 
     return jsonify({
         "access_token": access_token,
@@ -150,8 +184,8 @@ def user_login():
 # ------------------------------
 # Endpoint: Refresh Token
 # ------------------------------
-@app.route("/token/refresh", methods=["POST"])
-def refresh():
+@app.route("/token/user/refresh", methods=["POST"])
+def refresh_usuario():
     datos = request.json
     rtoken = datos.get("refresh_token")
 
@@ -161,6 +195,9 @@ def refresh():
 
     user = next((u for u in usuarios if u["nombre"] == usuario), None)
 
+    if user["nombre"] in active_user_tokens:
+        del active_user_tokens[user["nombre"]]
+
     payload = {
         "usuario": user["nombre"],
         "rol": user["rol"],
@@ -169,6 +206,42 @@ def refresh():
     }
 
     access_token = jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
+    active_user_tokens[user["nombre"]] = access_token
+
+    return jsonify({
+        "access_token": access_token,
+        "token_type": "Bearer",
+        "expires_in": 900
+    })
+
+@app.route("/token/client/refresh", methods=["POST"])
+def refresh_cliente():
+    datos = request.json
+    rtoken = datos.get("refresh_token")
+
+    cliente = next((k for k, v in refresh_tokens.items() if v == rtoken), None)
+    test_data[1] = cliente
+    if not cliente:
+        return jsonify({"error": "Refresh token inválido"}), 401
+
+    client = None
+    for c in clientes:
+        if c["client_id"] == cliente:
+            client = c
+            break
+
+    if cliente in active_client_tokens:
+        del active_client_tokens[cliente]
+
+
+    payload = {
+        "client_id": cliente,
+        "scope": "service.read service.write",
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=15)
+    }
+
+    access_token = jwt.encode(payload, PRIVATE_KEY, algorithm="RS256")
+    active_client_tokens[cliente] = access_token
 
     return jsonify({
         "access_token": access_token,
