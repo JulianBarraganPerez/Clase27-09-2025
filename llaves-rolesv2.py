@@ -193,7 +193,5 @@ def despido():
 # Ejecución
 # ------------------------------
 if __name__ == "__main__":
-    # Genera tus certificados locales para HTTPS:
-    # openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes
+    app.run(debug=True, port=5000, ssl_context=("cert.pem", "key.pem"))
 
-    app.run(debug=True, port=5000)
