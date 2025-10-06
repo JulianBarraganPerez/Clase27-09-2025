@@ -189,7 +189,7 @@ def refresh_usuario():
     datos = request.json
     rtoken = datos.get("refresh_token")
 
-    usuario = refresh_tokens.get(rtoken)
+    usuario = next((k for k, v in refresh_tokens.items() if v == rtoken), None)
     if not usuario:
         return jsonify({"error": "Refresh token inválido"}), 401
 
